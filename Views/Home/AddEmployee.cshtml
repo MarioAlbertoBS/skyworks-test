@@ -1,0 +1,156 @@
+@{
+    ViewData["Title"] = "Agregar Empleado";
+}
+
+<h3 class="mb-3">@ViewData["Title"]</h3>
+
+<form>
+    <div class="form-group row mb-1">
+        <label for="name" class="col-sm-2 col-form-label font-weight-bold">Nombre: </label>
+        <div class="col-sm-10">
+            <input id="name-input" type="text" name="name" class="form-control"/>
+            <small id="name-invalid" class="text-danger" hidden>El nombre es requerido</small>
+        </div>
+    </div>
+
+    <div class="form-group row mb-1">
+        <label for="paternal_surname" class="col-sm-2 col-form-label font-weight-bold">Apellido Paterno: </label>
+        <div class="col-sm-10">
+            <input id="paternal-surname-input" type="text" name="paternal_surname" class="form-control"/>
+            <small id="paternal-surname-invalid" class="text-danger" hidden>El apellido paterno es requerido</small>
+        </div>
+    </div>
+
+    <div class="form-group row mb-1">
+        <label for="maternal_surname" class="col-sm-2 col-form-label font-weight-bold">Apellido Materno: </label>
+        <div class="col-sm-10">
+            <input id="maternal-surname-input" type="text" name="maternal_surname" class="form-control"/>
+            <small id="maternal-surname-invalid" class="text-danger" hidden>El apellido materno es requerido</small>
+        </div>
+    </div>
+
+    <div class="form-group row mb-1">
+        <label for="group" class="col-sm-2 col-form-label font-weight-bold">Grupo:</label>
+        <div class="col-sm-10">
+            <select id="group-select" name="group" class="form-select" aria-label="Grupo">
+                <option value="0"></option>
+            </select>
+            <small id="group-invalid" class="text-danger" hidden>Se tiene que elegir un grupo</small>
+        </div>
+    </div>
+</form>
+
+<div class="container">
+    <div class="row justify-content-evenly">
+        <a id="accept-button" href="#" class="btn btn-success col-sm-3">Aceptar</a>
+        <a id="cancel-button" asp-controller="Home" asp-action="Index" class="btn btn-danger col-sm-3">Cancelar</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const school = urlParams.get("school");
+            fetchSchoolDetails(school);
+
+            $("#accept-button").on("click", function () {
+                let hasErrors = false;
+
+                if ($("#name-input").val() == "") {
+                    $("#name-input").addClass("is-invalid");
+                    $("#name-invalid").attr("hidden", false);
+                    hasErrors = true;
+                } else {
+                    $("#name-input").removeClass("is-invalid");
+                    $("#name-invalid").attr("hidden", true);
+                }
+
+                if ($("#paternal-surname-input").val() == "") {
+                    $("#paternal-surname-input").addClass("is-invalid");
+                    $("#paternal-surname-invalid").attr("hidden", false);
+                    hasErrors = true;
+                } else {
+                    $("#paternal-surname-input").removeClass("is-invalid");
+                    $("#paternal-surname-invalid").attr("hidden", true);    
+                }
+
+                if($("#group-select").val() == 0) {
+                    $("#group-select").addClass("is-invalid");
+                    $("#group-invalid").attr("hidden", false);
+                    hasErrors = true;
+                } else {
+                    $("#group-select").removeClass("is-invalid");
+                    $("#group-invalid").attr("hidden", true);
+                }
+
+                if (hasErrors) {
+                    return false;
+                }
+
+                if (confirm("¿Deseas guardar los cambios?")) {
+                    const name = $("#name-input").val();
+                    const paternalSurname = $("#paternal-surname-input").val();
+                    const maternalSurname = $("#maternal-surname-input").val();
+                    const group = $("#group-select").val();
+
+                    $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        url: `${window.location.origin}/api/Employee`,
+                        data: JSON.stringify({
+                            name: name,
+                            paternalSurname: paternalSurname,
+                            maternalSurname: maternalSurname,
+                            groupId: group,
+                            schoolId: school
+                        }),
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        success: function (response) {
+                            alert("Se registró el empleado exitosamente.");
+
+                            $("#name-input").val("");
+                            $("#paternal-surname-input").val("");
+                            $("#maternal-surname-input").val("");
+                            $("#group-select").val(0).trigger("change");
+                        },
+                        error: function (response) {
+                            console.error(response);
+                            alert("error");
+                        }
+                    });
+                }
+            });
+
+            $("#cancel-button").on("click", function () {
+                if (!confirm("¿Deseas salir? Los cambios no se guardarán.")) {
+                    return false;
+                }
+
+                return true;
+            })
+
+            function fetchSchoolDetails(schoolId) {
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",
+                    url: `${window.location.origin}/api/School/${schoolId}`,
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    success: function (response) {
+                        const groupOptions = response.groups.map(group => `<option value="${group.id}">${group.name}</option>`);
+
+                        $("#group-select").append(groupOptions.join(""));
+                    },
+                    error: function(response) {
+                        console.error(response);
+                        alert("No se pudo obtener información de las escuelas.");
+                    }
+                });
+            }
+        });
+    </script>
+}

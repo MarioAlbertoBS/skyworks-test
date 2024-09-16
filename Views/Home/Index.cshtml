@@ -1,0 +1,267 @@
+﻿@{
+    ViewData["Title"] = "Administración";
+}
+
+<!-- Header with options -->
+<header>
+    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white box-shadow mb-3">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                <ul class="navbar-nav flex-grow-1">
+                    <li class="nav-item px-2">
+                        <a id="add-student-link" class="btn btn-light" asp-area="" asp-controller="Home" asp-action="AddStudent">
+                            <i class="fa-solid fa-graduation-cap"></i>Agregar Alumno
+                        </a>
+                    </li>
+                    <li class="nav-item px-2">
+                        <a id="edit-student-link" class="btn btn-light" asp-area="" asp-controller="Home" asp-action="EditStudent">
+                            <i class="fa-solid fa-pen"></i>Modificar Alumno
+                        </a>
+                    </li>
+                    <li class="nav-item px-2">
+                        <a id="add-employee-link" class="btn btn-light" asp-area="" asp-controller="Home" asp-action="AddEmployee">
+                            <i class="fa-solid fa-user"></i>Agregar Empleado
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Form -->
+<section>
+    <div class="form-group row mb-1">
+        <label for="school" class="col-sm-2 col-form-label font-weight-bold">Escuela: </label>
+        <div class="col-sm-10">
+            <select id="school-select" name="school" class="form-select" aria-label="Escuela">
+                <option></option>
+            </select>
+        </div>
+    </div>
+    <div class="form-group row mb-1">
+        <label for="principal" class="col-sm-2 col-form-label font-weight-bold">Director: </label>
+        <div class="col-sm-10">
+            <input id="principal-input" type="text" readonly name="princpal" class="form-control" >
+        </div>
+    </div>
+    <div class="form-group row mb-1">
+        <label for="group" class="col-sm-2 col-form-label font-weight-bold">Grupo:</label>
+        <div class="col-sm-10">
+            <select id="group-select" name="group" class="form-select" aria-label="Grupo">
+                <option></option>
+            </select>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="employee" class="col-sm-2 col-form-label font-weight-bold">Profesor:</label>
+        <div class="col-sm-10">
+            <select id="employee-select" name="employee" class="form-select" aria-label="Profesor" readonly>
+                <option></option>
+            </select>
+        </div>
+    </div>
+</section>
+
+<!-- Students Table -->
+<section class="mt-5">
+    <table class="table" id="students-table">
+        <thead>
+            <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Teléfono</th>
+                <th scope="col">Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</section>
+
+@section Scripts {
+    <script>
+        // Fetch the schools in database
+        $(function() {
+            fetchSchools();
+
+            disableFields();
+
+            // Enable fields and fetch school related data
+            $("#school-select").on('change', function () {
+                const schoolId = $(this).val();
+
+                fetchSchoolDetails(schoolId);
+
+                const addEmployeeLinkButton = $("#add-employee-link");
+                const baseUrl = addEmployeeLinkButton.attr("href");
+                const newUrl = `${baseUrl}?school=${schoolId}`;
+                addEmployeeLinkButton.attr("href", newUrl);
+
+                enableAddEmployeeLink();
+                enableGroupSelect();
+            });
+
+            $("#group-select").on('change', function () {
+                const groupId = $(this).val();
+
+                fetchGroupDetails(groupId);
+
+                const addStudentLinkButton = $("#add-student-link");
+                const baseUrl = addStudentLinkButton.attr("href");
+                const newUrl = `${baseUrl}?group=${groupId}`;
+                addStudentLinkButton.attr("href", newUrl);
+
+                enableAddStudentLink();
+            });
+
+            $('#students-table tbody').on('click', 'tr', function() {
+                const row = $(event.target).parent();
+                row.addClass('table-active').siblings().removeClass('table-active');
+
+                const studentId = row.children().first().html();
+                
+                const editStudentLinkButton = $("#edit-student-link");
+                const baseUrl = editStudentLinkButton.attr("href");
+                const newUrl = `${baseUrl}?student=${studentId}`;
+                editStudentLinkButton.attr("href", newUrl);
+
+                enableEditStudentLink();
+            });
+
+            function fetchSchools() {
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",
+                    url: `${window.location.origin}/api/School`,
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    success: function (response) {
+                        var options = response.map(school => `<option value="${school.id}">${school.name}</option>`);
+                        $("#school-select").append(options.join(""));
+                    },
+                    error: function(response) {
+                        console.error(response);
+                        alert("No se pudo obtener información de las escuelas.");
+                    }
+                });
+            }
+
+            function fetchSchoolDetails(schoolId) {
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",
+                    url: `${window.location.origin}/api/School/${schoolId}`,
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    success: function (response) {
+                        console.table(response);
+
+                        $("#principal-input").val(response.principal);
+
+                        const groupOptions = response.groups.map(group => `<option value="${group.id}">${group.name}</option>`);
+                        const employeeOptions = response.employees.map(employee => `<option value="${employee.id}">${employee.name}</option>`);
+
+                        $("#group-select").append(groupOptions.join(""));
+                        $("#employee-select").append(employeeOptions.join(""));
+                    },
+                    error: function(response) {
+                        console.error(response);
+                        alert("No se pudo obtener información de las escuelas.");
+                    }
+                });
+            }
+
+            function fetchGroupDetails(groupId) {
+                // Fetch the groups
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",
+                    url: `${window.location.origin}/api/Group/${groupId}`,
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    success: function (response) {
+                        $("#employee-select").val(response.employee).trigger("change");
+
+                        const table = $("#students-table tbody").empty();
+                        console.log(table);
+                        response.students.forEach(student => {
+                            const row = `
+                                <tr>
+                                    <td hidden>${student.id}</td>
+                                    <td>${student.name}</td>
+                                    <td>${student.phone}</td>
+                                    <td>${student.status}</td>
+                                </tr>
+                            `;
+
+                            table.append(row);
+                        });
+                    },
+                    error: function (response) {
+                        console.error(response);
+                        alert("No se pudo obtener información de los grupos.");
+                    }
+                });
+            }
+
+            function disableFields() {
+                enableAddStudentLink(false);
+                enableEditStudentLink(false);
+                enableAddEmployeeLink(false);
+                enableGroupSelect(false);
+                enableEmployeeSelect(false);
+            }
+
+            function enableAddStudentLink(enable = true) {
+                if (enable) {
+                    $("#add-student-link").unbind("click")
+                        .addClass("btn-light")
+                        .removeClass("btn-secondary");
+                    return;
+                }
+                $("#add-student-link").bind("click", false)
+                    .addClass("btn-secondary")
+                    .removeClass("btn-light");
+            }
+
+            function enableEditStudentLink(enable = true) {
+                if (enable) {
+                    $("#edit-student-link").unbind("click")
+                        .addClass("btn-light")
+                        .removeClass("btn-secondary");
+                    return;
+                }
+                $("#edit-student-link").bind("click", false)
+                    .addClass("btn-secondary")
+                    .removeClass("btn-light");
+            }
+
+            function enableAddEmployeeLink(enable = true) {
+                if (enable) {
+                    $("#add-employee-link").unbind("click")
+                        .addClass("btn-light")
+                        .removeClass("btn-secondary");
+                    return;
+                }
+                $("#add-employee-link").bind("click", false)
+                    .addClass("btn-secondary")
+                    .removeClass("btn-light");
+            }
+
+            function enableGroupSelect(enable = true) {
+                $("#group-select").attr("disabled", !enable);
+            }
+
+            function enableEmployeeSelect(enable = true) {
+                $("#employee-select").attr("disabled", !enable);
+            }
+        });
+    </script>
+}

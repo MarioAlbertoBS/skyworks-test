@@ -1,0 +1,147 @@
+@{
+    ViewData["Title"] = "Agregar Alumno";
+}
+
+<h3 class="mb-3">@ViewData["Title"]</h3>
+
+<form id="add-user-form">
+    <div class="form-group row mb-1">
+        <label for="name" class="col-sm-2 col-form-label font-weight-bold">Nombre: </label>
+        <div class="col-sm-10">
+            <input id="name-input" type="text" name="name" class="form-control"/>
+            <small id="name-invalid" class="text-danger" hidden>El nombre es requerido</small>
+        </div>
+    </div>
+
+    <div class="form-group row mb-1">
+        <label for="paternal_surname" class="col-sm-2 col-form-label font-weight-bold">Apellido Paterno: </label>
+        <div class="col-sm-10">
+            <input id="paternal-surname-input" type="text" name="paternal_surname" class="form-control"/>
+            <small id="paternal-surname-invalid" class="text-danger" hidden>El apellido paterno es requerido</small>
+        </div>
+    </div>
+
+    <div class="form-group row mb-1">
+        <label for="maternal_surname" class="col-sm-2 col-form-label font-weight-bold">Apellido Materno: </label>
+        <div class="col-sm-10">
+            <input id="maternal-surname-input" type="text" name="maternal_surname" class="form-control"/>
+            <small id="maternal-surname-invalid" class="text-danger" hidden>El apellido materno es requerido</small>
+        </div>
+    </div>
+
+    <div class="form-group row mb-1">
+        <label for="phone" class="col-sm-2 col-form-label font-weight-bold">Teléfono: </label>
+        <div class="col-sm-10">
+            <input id="phone-input" type="text" name="phone" class="form-control" maxlength="12"/>
+            <small id="phone-invalid" class="text-danger" hidden>El teléfono es requerido y sólo en el formato (555)5555555</small>
+        </div>
+    </div>
+</form>
+
+<div class="container">
+    <div class="row justify-content-evenly">
+        <a id="accept-button" href="#" class="btn btn-success col-sm-3">Aceptar</a>
+        <a id="cancel-button" asp-controller="Home" asp-action="Index" class="btn btn-danger col-sm-3">Cancelar</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('#phone-input').on('input', function() {
+                var input = $(this).val();
+
+                // Remove all non-numeric characters
+                input = input.replace(/\D/g, '');
+
+                // Add parentheses and format the number
+                if (input.length > 3) {
+                    input = '(' + input.substring(0, 3) + ')' + input.substring(3);
+                }
+
+                $(this).val(input);
+            });
+
+            $("#accept-button").on("click", function () {
+                let hasErrors = false;
+
+                if ($("#name-input").val() == "") {
+                    $("#name-input").addClass("is-invalid");
+                    $("#name-invalid").attr("hidden", false);
+                    hasErrors = true;
+                } else {
+                    $("#name-input").removeClass("is-invalid");
+                    $("#name-invalid").attr("hidden", true);
+                }
+
+                if ($("#paternal-surname-input").val() == "") {
+                    $("#paternal-surname-input").addClass("is-invalid");
+                    $("#paternal-surname-invalid").attr("hidden", false);
+                    hasErrors = true;
+                } else {
+                    $("#paternal-surname-input").removeClass("is-invalid");
+                    $("#paternal-surname-invalid").attr("hidden", true);    
+                }
+
+                if($("#phone-input").val() == "" || $("#phone-input").val().lenght > 12) {
+                    $("#phone-input").addClass("is-invalid");
+                    $("#phone-invalid").attr("hidden", false);
+                    hasErrors = true;
+                } else {
+                    $("#phone-input").removeClass("is-invalid");
+                    $("#phone-invalid").attr("hidden", true);
+                }
+
+                if (hasErrors) {
+                    return false;
+                }
+
+                if (confirm("¿Deseas guardar los cambios?")) {
+                    const urlParams = new URLSearchParams(window.location.search);
+
+                    const group = urlParams.get("group");
+                    const name = $("#name-input").val();
+                    const paternalSurname = $("#paternal-surname-input").val();
+                    const maternalSurname = $("#maternal-surname-input").val();
+                    const phone = $("#phone-input").val();
+
+                    $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        url: `${window.location.origin}/api/Student`,
+                        data: JSON.stringify({
+                            name: name,
+                            paternalSurname: paternalSurname,
+                            maternalSurname: maternalSurname,
+                            phone: phone,
+                            groupId: group
+                        }),
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        success: function (response) {
+                            alert("El alumno se registró exitosamente.")
+                            
+                            $("#name-input").val("");
+                            $("#paternal-surname-input").val("");
+                            $("#maternal-surname-input").val("");
+                            $("#phone-input").val("");
+                        },
+                        error: function (response) {
+                            console.error(response);
+                            alert("error");
+                        }
+                    });
+                }
+            });
+
+            $("#cancel-button").on("click", function () {
+                if (!confirm("¿Deseas salir? Los cambios no se guardarán.")) {
+                    return false;
+                }
+
+                return true;
+            })
+        });
+    </script>
+}

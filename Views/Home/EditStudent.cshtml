@@ -1,0 +1,177 @@
+@{
+    ViewData["Title"] = "Modificar Alumno";
+}
+
+<h3 class="mb-3">@ViewData["Title"]</h3>
+
+<form>
+    <div class="form-group row mb-1">
+        <label for="name" class="col-sm-2 col-form-label font-weight-bold">Nombre: </label>
+        <div class="col-sm-10">
+            <input id="name-input" type="text" name="name" class="form-control"/>
+            <small id="name-validation" class="text-danger" hidden>El nombre es requerido.</small>
+        </div>
+    </div>
+
+    <div class="form-group row mb-1">
+        <label for="paternal_surname" class="col-sm-2 col-form-label font-weight-bold">Apellido Paterno: </label>
+        <div class="col-sm-10">
+            <input id="paternal-surname-input" type="text" name="paternal_surname" class="form-control"/>
+            <small id="paternal-surname-invalid" class="text-danger" hidden>El apellido paterno es requerido</small>
+        </div>
+    </div>
+
+    <div class="form-group row mb-1">
+        <label for="maternal_surname" class="col-sm-2 col-form-label font-weight-bold">Apellido Materno: </label>
+        <div class="col-sm-10">
+            <input id="maternal-surname-input" type="text" name="maternal_surname" class="form-control"/>
+            <small id="maternal-surname-invalid" class="text-danger" hidden>El apellido materno es requerido</small>
+        </div>
+    </div>
+
+    <div class="form-group row mb-4">
+        <label for="phone" class="col-sm-2 col-form-label font-weight-bold">Teléfono: </label>
+        <div class="col-sm-4 justify-content-end">
+            <input id="phone-input" type="text" name="phone" class="form-control" maxlength="12"/>
+            <small id="phone-invalid" class="text-danger" hidden>El teléfono es requerido y sólo en el formato (555)5555555</small>
+        </div>
+
+        <label for="status" class="col-sm-2 col-form-label font-weight-bold">Estado: </label>
+        <div class="col-sm-4">
+            <select id="status-select" name="phone" class="form-select">
+                <option value="0">Cursando</option>
+                <option value="1" >Baja</option>
+            </select>
+        </div>
+    </div>
+</form>
+
+<div class="container">
+    <div class="row justify-content-evenly">
+        <a id="accept-button" href="#" class="btn btn-success col-sm-3">Aceptar</a>
+        <a id="cancel-button" asp-controller="Home" asp-action="Index" class="btn btn-danger col-sm-3">Cancelar</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const studentId = urlParams.get("student");
+
+            fetchStudentDetails(studentId);
+
+            $('#phone-input').on('input', function() {
+                var input = $(this).val();
+
+                // Remove all non-numeric characters
+                input = input.replace(/\D/g, '');
+
+                // Add parentheses and format the number
+                if (input.length > 3) {
+                    input = '(' + input.substring(0, 3) + ')' + input.substring(3);
+                }
+
+                $(this).val(input);
+            });
+
+            $("#accept-button").on("click", function () {
+                let hasErrors = false;
+
+                if ($("#name-input").val() == "") {
+                    $("#name-input").addClass("is-invalid");
+                    $("#name-invalid").attr("hidden", false);
+                    hasErrors = true;
+                } else {
+                    $("#name-input").removeClass("is-invalid");
+                    $("#name-invalid").attr("hidden", true);
+                }
+
+                if ($("#paternal-surname-input").val() == "") {
+                    $("#paternal-surname-input").addClass("is-invalid");
+                    $("#paternal-surname-invalid").attr("hidden", false);
+                    hasErrors = true;
+                } else {
+                    $("#paternal-surname-input").removeClass("is-invalid");
+                    $("#paternal-surname-invalid").attr("hidden", true);    
+                }
+
+                if($("#phone-input").val() == "" || $("#phone-input").val().lenght > 12) {
+                    $("#phone-input").addClass("is-invalid");
+                    $("#phone-invalid").attr("hidden", false);
+                    hasErrors = true;
+                } else {
+                    $("#phone-input").removeClass("is-invalid");
+                    $("#phone-invalid").attr("hidden", true);
+                }
+
+                if (hasErrors) {
+                    return false;
+                }
+
+                if (confirm("¿Deseas guardar los cambios?")) {
+                    const name = $("#name-input").val();
+                    const paternalSurname = $("#paternal-surname-input").val();
+                    const maternalSurname = $("#maternal-surname-input").val();
+                    const phone = $("#phone-input").val();
+                    const status = Number($("#status-select").val());
+
+                    $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        url: `${window.location.origin}/api/Student/${studentId}`,
+                        data: JSON.stringify({
+                            name: name,
+                            paternalSurname: paternalSurname,
+                            maternalSurname: maternalSurname,
+                            phone: phone,
+                            status: status
+                        }),
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        success: function (response) {
+                            alert("Los datos del alumno fueron actualizados.");
+                        },
+                        error: function (response) {
+                            console.error(response);
+                            alert("error");
+                        }
+                    });
+                }
+            });
+
+            $("#cancel-button").on("click", function () {
+                if (!confirm("¿Deseas salir? Los cambios no se guardarán.")) {
+                    return false;
+                }
+
+                return true;
+            })
+            
+            function fetchStudentDetails(studentId) {
+                $.ajax({
+                        type: "GET",
+                        dataType: "json",
+                        url: `${window.location.origin}/api/Student/${studentId}`,
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        success: function (response) {
+                            console.log(response);
+
+                            $("#name-input").val(response.name);
+                            $("#paternal-surname-input").val(response.paternalSurname);
+                            $("#maternal-surname-input").val(response.maternalSurname);
+                            $("#phone-input").val(response.phone);
+                            $("#status-select").val(response.status).trigger("change");
+                        },
+                        error: function (response) {
+                            console.error(response);
+                            alert("error");
+                        }
+                    });
+            }
+        });
+    </script>
+}
