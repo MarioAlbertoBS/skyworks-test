@@ -39,7 +39,7 @@ public class SkyworksDbContext : DbContext
         modelBuilder.Entity<Group>()
             .HasOne(group => group.Employee)
             .WithOne(employee => employee.Group)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Set constraints
         // Limit Status to only Enum values

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SkyworksTest.Models;
 
@@ -11,9 +12,11 @@ using SkyworksTest.Models;
 namespace SkyworksTest.Migrations
 {
     [DbContext(typeof(SkyworksDbContext))]
-    partial class SkyworksDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240916231136_DropSchoolIdFromStudents")]
+    partial class DropSchoolIdFromStudents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,7 +173,7 @@ namespace SkyworksTest.Migrations
                     b.HasOne("SkyworksTest.Models.Employee", "Employee")
                         .WithOne("Group")
                         .HasForeignKey("SkyworksTest.Models.Group", "EmployeeId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("SkyworksTest.Models.School", "School")
                         .WithMany("Groups")
